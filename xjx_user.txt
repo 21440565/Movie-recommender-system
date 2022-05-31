@@ -1,0 +1,10 @@
+b1,24,male,student
+b2,24,male,student
+b3,22,male,student
+b4,23,male,student
+b5,25,male,student
+b6,26,male,clerk
+b7,26,male,clerk
+b8,23,male,student
+b9,22,male,student
+b10,24,male,student

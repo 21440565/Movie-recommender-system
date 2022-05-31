@@ -1,0 +1,6 @@
+cd C:\Users\79482\Desktop\recommendsystem
+
+
+pip install –r requirements.txt
+
+uvicorn main:app

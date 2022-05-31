@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Recommender System</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link href="style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+    <div id="app">
+
+        <el-container>
+            <el-header>
+                <div class="line"></div>
+                <el-menu :default-active="activeIndex2" class="el-menu-demo" mode="horizontal" @select="handleSelect"
+                    background-color="#545c64" text-color="#fff" active-text-color="#ffd04b">
+                    <el-menu-item index="1">7240 recommender system</el-menu-item>
+                    <el-submenu index="2" show-timeout="300">
+                        <template slot="title">Navigation<i class="el-icon-position"></i></template>
+                        <el-menu-item index="2-1" @click="jump('1')">Recommended Movies(content-based)<i
+                                class="el-icon-aim"></i>
+                        </el-menu-item>
+                        <el-menu-item index="2-2" @click="jump('2')">Second recommendation(content-based)<i
+                                class="el-icon-aim"></i></el-menu-item>
+                        <el-menu-item index="2-3" @click="jump('3')">Recommended Movies(collaborative
+                            filtering)<i class="el-icon-aim"></i></el-menu-item>
+                        <el-menu-item index="2-4" @click="jump('4')">Second recommendation(collaborative
+                            filtering)<i class="el-icon-aim"></i>
+                        </el-menu-item>
+                        <el-menu-item index="2-5" @click="jump('5')">About Developer<i class="el-icon-chat-square"></i>
+                        </el-menu-item>
+                    </el-submenu>
+                    <el-submenu index="3">
+                        <template slot="title">More<i class="el-icon-s-opportunity"></i></template>
+                        <el-menu-item index="3-1"><a href="https://www.imdb.com/?ref_=nv_home" target="_blank">Movie
+                                infomation source<i class="el-icon-more-outline"></i></a></el-menu-item>
+                        <el-menu-item index="3-2"><a href="mailto:21440565@life.hkbu.edu.hk" target="_blank">Emali
+                                Us<i class="el-icon-s-promotion"></i></a>
+                        </el-menu-item>
+                    </el-submenu>
+
+                </el-menu>
+            </el-header>
+
+            <el-main>
+                <!-- Dialog0 -->
+                <el-dialog :visible="dialog0" width="60%" :show-close="false">
+                    <h2>Welcome to the movie Recommendation system, where there are many movies. Before we
+                        recommend some movies for you,
+                        please choose some genres of movies and rate movies in the dialog.</h2>
+                    <span slot="footer" class="dialog-footer">
+                        <el-button type="success" icon="el-icon-thumb" @click="step0" style="min-width:128px">Next
+                        </el-button>
+                    </span>
+                </el-dialog>
+
+                <!-- Dialog1 -->
+                <el-dialog title="Please choose any genre you're interested in." :visible="dialog1" width="60%"
+                    :show-close="false">
+                    <el-steps :active="active1" finish-status="success" align-center>
+                        <el-step title="step 1"></el-step>
+                        <el-step title="step 2"></el-step>
+                    </el-steps>
+                    <span>Multiple answers are possible.</span>
+                    <el-checkbox-group v-model="selected_genre" style="margin-top:20px">
+                        <el-checkbox :label=item border v-for="(item, index) in genre" :key="index"
+                            style="margin-top:20px; margin-left: 0px"></el-checkbox>
+                    </el-checkbox-group>
+                    <span slot="footer" class="dialog-footer">
+                        <el-button type="success" icon="el-icon-thumb" @click="step1" plain :disabled="step1_show"
+                            style="min-width:128px">Next</el-button>
+                    </span>
+                </el-dialog>
+
+                <!-- Dialog2 -->
+                <el-dialog
+                    title="Please rate the following movies. If you haven't seen the movie, then you don't need to rate it"
+                    :visible="dialog2" width="80%" :show-close="false">
+                    <el-steps :active="active2" finish-status="success" align-center>
+                        <el-step title="finished"></el-step>
+                        <el-step title="step 2"></el-step>>
+                    </el-steps>
+                    <el-row :gutter="20">
+                        <el-col :span="4" v-for="o in movies" :key="o.movie_id" :offset="0">
+                            <el-card :body-style="{ padding: '0px' }"
+                                style="margin-top:15px;height:368px;overflow:auto">
+                                <el-image style="width: 100%;height:240px;" :src="o.poster_url" fit="cover">
+                                </el-image>
+                                <h4 style="padding:0 10px;margin:0">{{o.movie_title}}</h4>
+                                <el-rate v-model="o.score" style="padding:10px 10px;" :colors="colors" show-text>
+                                </el-rate>
+                            </el-card>
+                        </el-col>
+                    </el-row>
+                    <span slot="footer" class="dialog-footer">
+                        <el-button type="success" icon="el-icon-check" @click="step2" plain :disabled="step2_show"
+                            style="width:128px">Finish</el-button>
+                    </span>
+                </el-dialog>
+
+                <!-- 走马灯 -->
+                <template>
+                    <el-carousel :interval="4000" type="card" height="400px">
+                        <el-carousel-item v-for="o in movies" :key="o.movie_id">
+                            <el-image style="width: 100%;height:100%;" :src="o.poster_url" fit="cover">
+                                <h3 class="medium">{{ o.movie_title }}</h3>
+                        </el-carousel-item>
+                    </el-carousel>
+                </template>
+
+                <el-divider id="1">
+                </el-divider>
+                <!-- ------------------------------------------------------------------------------------------------------------------------------------- -->
+                <h2>Based on your movie ratings, we use Content-based algorithm to recommend the following three
+                    genres
+                    of movies: </h2>
+                <el-col :gutter="20" v-for="o in user_profile" :key="o.genres" :offset="0">
+                    <h3 style="padding:0 10px;margin:0">{{o.genres}}</h3>
+                </el-col>
+                <el-row>
+                    <el-col :span="4" v-for="o in recommended1" :key="o.movie_id" :offset="0">
+                        <el-card :body-style="{ padding: '0px' }"
+                            style="margin-top:15px;height:400px;overflow:auto;position:relative">
+                            <el-image style="width: 100%;height:240px;" :src="o.poster_url" fit="cover"></el-image>
+                            <h4 style="padding:0 10px;margin:0">{{o.movie_title}}</h4>
+                            <h6 style="padding:0 10px;margin:0.5em">Genres:{{ o.genres }}</h6>
+                            <el-rate v-model="o.score" style="padding:10px 10px;" :colors="colors" show-text>
+                            </el-rate>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <br>
+                <br>
+                <el-row>
+                    <el-button type="success" plain style="position:absolute;bottom:5px;right:5px"
+                        @click="submit1_1(o)">
+                        <i class="el-icon-check"></i>Submit ratings
+                    </el-button>
+                </el-row>
+                <br>
+                <br>
+                <el-row>
+                    <el-button type="danger" plain style="position:absolute;bottom:5px;right:5px"
+                        @click="liked_btn1(o)">
+                        <i class="el-icon-plus"></i>Recommend again
+                    </el-button>
+                </el-row>
+
+                <!-- ------------------------------------------------------------------------------------------------------------------------------------- -->
+
+                <el-divider id="2">
+                </el-divider>
+                <h2>According to the favorite movie you just selected,
+                    we use the Content-based algorithm to evaluate the genres you may be interested in and
+                    give the following new recommendations</h2>
+                <el-row :gutter="20">
+                    <el-col :span="4" v-for="o in liked1" :key="o.movie_id" :offset="0">
+                        <el-card :body-style="{ padding: '0px' }"
+                            style="margin-top:15px;height:400px;overflow:auto;position:relative">
+                            <el-image style="width: 100%;height:240px;" :src="o.poster_url" fit="cover"></el-image>
+                            <h4 style="padding:0 10px;margin:0">{{o.movie_title}}</h4>
+                            <!-- <h6 style="padding:0 10px;margin:0.5em">{{ o.release_date }}</h6> -->
+                            <h6 style="padding:0 10px;margin:0.5em">Genres:{{ o.genres }}</h6>
+                            <el-rate v-model="o.score" style="padding:10px 10px;" :colors="colors" show-text>
+                            </el-rate>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <br>
+                <br>
+                <el-row>
+                    <el-button type="success" plain style="position:absolute;bottom:5px;right:5px"
+                        @click="submit2_1(o)">
+                        <i class="el-icon-check"></i>Submit ratings
+                    </el-button>
+                </el-row>
+
+                <!-- ------------------------------------------------------------------------------------------------------------------------------------- -->
+                <el-divider id="3">
+                </el-divider>
+
+                <h2> These recommendation results are based on your ratings. We use SVD algorithm to predict some
+                    interesting movies you may like. </h2>
+                <el-row :gutter="20">
+                    <el-col :span="4" v-for="o in recommended2" :key="o.movie_id" :offset="0">
+                        <el-card :body-style="{ padding: '0px' }"
+                            style="margin-top:15px;height:400px;overflow:auto;position:relative">
+                            <el-image style="width: 100%;height:240px;" :src="o.poster_url" fit="cover"></el-image>
+                            <h4 style="padding:0 10px;margin:0">{{o.movie_title}}</h4>
+                            <h6 style="padding:0 10px;margin:0.5em">Genres:{{ o.genres }}</h6>
+                            <!-- <h6 style="padding:0 10px;margin:0.5em">{{ o.genres }}</h6> -->
+                            <el-rate v-model="o.score" style="padding:10px 10px;" :colors="colors" show-text>
+                            </el-rate>
+
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <br>
+                <br>
+                <el-row>
+                    </el-button>
+                    <el-button type="success" plain style="position:absolute;bottom:5px;right:5px"
+                        @click="submit1_2(o)">
+                        <i class="el-icon-check"></i>Submit ratings
+                    </el-button>
+                </el-row>
+                <br>
+                <br>
+                <el-row>
+                    <el-button type="danger" plain style="position:absolute;bottom:5px;right:5px"
+                        @click="liked_btn2(o)">
+                        <i class="el-icon-plus"></i>Recommend again
+                    </el-button>
+                </el-row>
+
+                <!-- ------------------------------------------------------------------------------------------------------------------------------------- -->
+
+                <el-divider id="4">
+                </el-divider>
+                <h2>These recommendation results are based on the item-based KNN with means algorithm. We collect and
+                    analyse the movies you like, then push similar movies to you.</h2>
+                <el-row :gutter="20">
+                    <el-col :span="4" v-for="o in liked2" :key="o.movie_id" :offset="0">
+                        <el-card :body-style="{ padding: '0px' }"
+                            style="margin-top:15px;height:400px;overflow:auto;position:relative">
+                            <el-image style="width: 100%;height:240px;" :src="o.poster_url" fit="cover"></el-image>
+                            <h4 style="padding:0 10px;margin:0">{{o.movie_title}}</h4>
+                            <!-- <h6 style="padding:0 10px;margin:0.5em">{{ o.release_date }}</h6> -->
+                            <h6 style="padding:0 10px;margin:0.5em">Genres:{{ o.genres }}</h6>
+                            <el-rate v-model="o.score" style="padding:10px 10px;" :colors="colors" show-text>
+                            </el-rate>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <br>
+                <br>
+                <el-row>
+                    <el-button type="success" plain style="position:absolute;bottom:5px;right:5px"
+                        @click="submit2_2(o)">
+                        <i class="el-icon-check"></i>Submit ratings
+                    </el-button>
+                </el-row>
+            </el-main>
+            <!-- ------------------------------------------------------------------------------------------------------------------------------------- -->
+            <el-footer>
+                <el-divider id="5">
+                    <h2>About Developer</h2>
+                </el-divider>
+                <el-collapse v-model="activeName" accordion id="4">
+                    <el-collapse-item title="Yang Peiwen" name="1">
+                        <div>Mainly responsible for content-based algorithm development</div>
+                    </el-collapse-item>
+                    <el-collapse-item title="Xiong Jiaxuan" name="2">
+                        <div>Mainly responsible for collaborative filtering algorithm development </div>
+                    </el-collapse-item>
+                    <el-collapse-item title="Li Yonghao" name="3">
+                        <div>Mainly responsible for website development</div>
+                    </el-collapse-item>
+                </el-collapse>
+            </el-footer>
+
+        </el-container>
+    </div>
+</body>
+
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue@2.6.14/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/element-ui/lib/umd/locale/en.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    ELEMENT.locale(ELEMENT.lang.en)
+    new Vue({
+        el: '#app',
+
+        data: function () {
+            return {
+                baseurl: 'http://127.0.0.1:8000',
+                genre: [],
+                selected_genre: [],
+                movies: [],
+                recommended1: [],
+                recommended2: [],
+                liked1: [],
+                liked2: [],
+                liked3: [],
+                liked4: [],
+                user_profile: [],
+                dialog0: true,
+                dialog1: false,
+                dialog2: false,
+                checkboxGroup1: [],
+                value: 2,
+                colors: ['#99A9BF', '#F7BA2A', '#FF9900'],
+                active1: 0,
+                active2: 1,
+            }
+        },
+        methods: {
+            step0: function () {
+                this.dialog0 = false;
+                this.dialog1 = true;
+                this.dialog2 = false;
+            },
+
+            step1: function () {
+                axios.post(this.baseurl + "/api/movies", this.selected_genre).then((res) => {
+                    // console.log(res);
+                    this.movies = res.data;
+                    // console.log(typeof this.movies);
+                    if (this.movies.length === 18) {
+                        this.dialog0 = false;
+                        this.dialog1 = false;
+                        this.dialog2 = true;
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: 'Error'
+                        });
+                    };
+
+                })
+            },
+            step2: function () {
+                //console.log(this.movies);
+                axios.post(this.baseurl + "/api/recommend1", this.movies).then((res) => {
+                    console.log(res.data);
+                    this.recommended1 = res.data;
+                    if (this.recommended1.length > 0) {
+                        this.dialog2 = false;
+                        axios.get(this.baseurl + "/api/user_profile").then((res) => {
+                            // console.log(res.data);
+                            this.user_profile = res.data;
+                        })
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: 'Error'
+                        });
+                    };
+                });
+                
+                axios.post(this.baseurl + "/api/recommend2", this.movies).then((res) => {
+                    console.log(res.data);
+                    this.recommended2 = res.data;
+                    if (this.recommended2.length > 0) {
+                        this.dialog2 = false;
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: 'Error'
+                        });
+                    };
+                });
+
+            },
+
+            submit1_1: function () {
+
+                axios.post(this.baseurl + "/api/date_for_test1/", this.recommended1).then((res) => {
+                    // console.log(res.data);
+                });
+            },
+            liked_btn1: function (movie) {
+    
+                axios.post(this.baseurl + "/api/add_recommend1/", this.recommended1).then((res) => {
+                    console.log(res.data);
+                    this.liked1 = res.data;
+                    
+                });
+            },
+
+
+            submit1_2: function () {
+                axios.post(this.baseurl + "/api/date_for_test1_xjx/", this.recommended2).then((res) => {
+                    // console.log(res.data);
+                });
+            },
+            liked_btn2: function (movie) {
+
+                axios.post(this.baseurl + "/api/add_recommend2/", this.recommended2).then((res) => {
+                    console.log(res.data);
+                    this.liked2 = res.data;
+
+                });
+            },
+
+            submit2_1: function () {
+
+                axios.post(this.baseurl + "/api/date_for_test2/", this.liked1).then((res) => {
+                    // console.log(res.data);
+                });
+
+            },
+
+            submit2_2: function () {
+
+                axios.post(this.baseurl + "/api/date_for_test2_xjx/", this.liked2).then((res) => {
+                    // console.log(res.data);
+                });
+
+            },
+
+            // liked_btn: function (movie) {
+            //     let that = this;
+            //     this.liked1.push(movie);
+            //     this.liked2.push(movie);
+            //     this.recommended1.splice(this.recommended1.findIndex(item => item.movie_id === movie.movie_id), 1);
+            //     axios.get(this.baseurl + '/api/add_recommend1/' + movie.movie_id).then((res) => {
+            //         // console.log(res.data);
+            //         // that.recommended1.push.apply(that.recommended1, res.data);
+            //         that.liked1.push.apply(that.liked1, res.data);
+            //     });
+            //     this.recommended2.splice(this.recommended2.findIndex(item => item.movie_id === movie.movie_id), 1);
+            //     axios.get(this.baseurl + '/api/add_recommend2/' + movie.movie_id).then((res) => {
+            //         console.log(res.data);
+            //         // that.recommended2.push.apply(that.recommended2, res.data);
+            //         that.liked2.push.apply(that.liked2, res.data);
+            //     });
+            //     axios.get(this.baseurl + "/api/user_profile").then((res) => {
+            //         console.log(res.data)
+            //         this.user_profile = res.data;
+
+            //     })
+            // },
+
+            // liked_btn2: function (movie) {
+            //     let that = this;
+            //     this.liked1.push(movie);
+            //     this.liked2.push(movie);
+            //     this.liked1.splice(this.liked1.findIndex(item => item.movie_id === movie.movie_id), 1);
+            //     axios.get(this.baseurl + '/api/add_recommend1/' + movie.movie_id).then((res) => {
+            //         // console.log(res.data);
+            //         that.liked1.push.apply(that.liked1, res.data);
+            //     });
+            //     this.liked2.splice(this.liked2.findIndex(item => item.movie_id === movie.movie_id), 1);
+            //     axios.get(this.baseurl + '/api/add_recommend2/' + movie.movie_id).then((res) => {
+            //         // console.log(res.data);
+            //         that.liked2.push.apply(that.liked2, res.data);
+            //     })
+            // },
+
+
+            jump: function (domId) {
+                // 当前窗口正中心位置到指定dom位置的距离 
+
+                //页面滚动了的距离
+                let height = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+
+                //指定dom到页面顶端的距离
+                let dom = document.getElementById(domId);
+                let domHeight = dom.offsetTop;
+
+                //滚动距离计算
+                var S = Number(height) - Number(domHeight);
+
+                //判断上滚还是下滚
+                if (S < 0) {
+                    //下滚
+                    S = Math.abs(S);	//Math.abs返回一个数的绝对值		
+                    //window.scrollBy：把内容滚动到指定的像素数
+                    window.scrollBy({ top: S, behavior: "smooth" });
+                } else if (S == 0) {
+                    //不滚
+                    window.scrollBy({ top: 0, behavior: "smooth" });
+                } else {
+                    //上滚
+                    S = -S
+                    window.scrollBy({ top: S, behavior: "smooth" });
+                }
+            }
+        },
+
+        mounted: function () {
+
+            axios.get(this.baseurl + "/api/genre").then((res) => {
+                this.genre = res.data['genre'];
+            })
+
+        },
+        computed: {
+            step1_show: function () {
+                if (this.selected_genre.length > 0) {
+                    return false;
+                } else {
+                    return true;
+                }
+            },
+            step2_show: function () {
+                let scores = 0;
+                for (let i of this.movies) {
+                    if (i['score'] > 0) {
+                        scores++
+                    }
+                }
+                console.log(scores);
+                if (scores >= 1) {
+                    return false;
+                } else {
+                    return true
+                }
+            },
+        }
+    })
+</script>
+
+</body>
+
+</html>

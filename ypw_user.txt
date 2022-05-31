@@ -1,0 +1,10 @@
+a1,22,male,undergraduate
+a2,23,male,undergraduate
+a3,22,male,undergraduate
+a4,21,female,undergraduate
+a5,22,female,undergraduate
+a6,25,male,engineer
+a7,22,male,undergraduate
+a8,26,male,postgraduate
+a9,22,female,undergraduate
+a10,24,male,undergraduate
